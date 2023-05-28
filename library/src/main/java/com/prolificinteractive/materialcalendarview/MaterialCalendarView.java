@@ -27,7 +27,6 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.prolificinteractive.materialcalendarview.format.ArrayWeekDayFormatter;
 import com.prolificinteractive.materialcalendarview.format.DayFormatter;
@@ -433,7 +432,6 @@ public class MaterialCalendarView extends ViewGroup {
   }
 
   private void switchToState(CalendarMode calendarModeState) {
-    Toast.makeText(getContext(), "switching to state: " + calendarModeState, Toast.LENGTH_SHORT).show();
     newState()
             .setFirstDayOfWeek(firstDayOfWeek)
             .setCalendarDisplayMode(calendarModeState)
@@ -838,7 +836,9 @@ public class MaterialCalendarView extends ViewGroup {
   public void setSelectedDate(@Nullable CalendarDay date) {
     clearSelection();
     if (date != null) {
+      setCurrentDate(date);
       setDateSelected(date, true);
+      updateUi();
     }
   }
 
@@ -1511,13 +1511,11 @@ public class MaterialCalendarView extends ViewGroup {
   protected void onMonthClicked(final CalendarDay month) { // 1 - 12
     switchToState(CalendarMode.MONTHS);
     setCurrentDate(month);
-    Toast.makeText(getContext(), "month clicked : " + month, Toast.LENGTH_SHORT).show();
   }
 
   protected void onYearClicked(final CalendarDay month) {
     switchToState(CalendarMode.YEARS);
     setCurrentDate(month);
-    Toast.makeText(getContext(), "month clicked : " + month, Toast.LENGTH_SHORT).show();
   }
 
   /**
@@ -1579,6 +1577,16 @@ public class MaterialCalendarView extends ViewGroup {
     return new LayoutParams(1);
   }
 
+  private int getColumnCount() {
+    switch (state.calendarMode) {
+      case YEARS:
+      case DECADES:
+        return 4;
+      default:
+        return DEFAULT_DAYS_IN_WEEK;
+    }
+  }
+
   /**
    * {@inheritDoc}
    */
@@ -1598,7 +1606,7 @@ public class MaterialCalendarView extends ViewGroup {
     final int viewTileHeight = getTopbarVisible() ? (weekCount + 1) : weekCount;
 
     //Calculate independent tile sizes for later
-    int desiredTileWidth = desiredWidth / DEFAULT_DAYS_IN_WEEK;
+    int desiredTileWidth = desiredWidth / getColumnCount();
     int desiredTileHeight = desiredHeight / viewTileHeight;
 
     int measureTileSize = -1;
@@ -1647,7 +1655,7 @@ public class MaterialCalendarView extends ViewGroup {
     }
 
     //Calculate our size based off our measured tile size
-    int measuredWidth = measureTileWidth * DEFAULT_DAYS_IN_WEEK;
+    int measuredWidth = measureTileWidth * getColumnCount();
     int measuredHeight = measureTileHeight * viewTileHeight;
 
     //Put padding back in from when we took it away
@@ -1663,13 +1671,26 @@ public class MaterialCalendarView extends ViewGroup {
 
     int count = getChildCount();
 
+    // Title calculations
+    final View titleView = getChildAt(0);
+    LayoutParams titleParams = (LayoutParams) titleView.getLayoutParams();
+    int titleChildWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
+            getColumnCount() * measureTileWidth,
+            MeasureSpec.EXACTLY
+    );
+    int titleChildHeightMeasureSpec = MeasureSpec.makeMeasureSpec(
+            titleParams.height * (desiredHeight / 8),
+            MeasureSpec.EXACTLY
+    );
+    titleView.measure(titleChildWidthMeasureSpec, titleChildHeightMeasureSpec);
+
     for (int i = 0; i < count; i++) {
       final View child = getChildAt(i);
 
       LayoutParams p = (LayoutParams) child.getLayoutParams();
 
       int childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
-          DEFAULT_DAYS_IN_WEEK * measureTileWidth,
+          getColumnCount() * measureTileWidth,
           MeasureSpec.EXACTLY
       );
 
