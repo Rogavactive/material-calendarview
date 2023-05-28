@@ -9,6 +9,8 @@ public enum CalendarMode {
    * Month Mode to display an entire month per page.
    */
   MONTHS(6),
+  YEARS(7),
+  DECADES(8),
   /**
    * Week mode that shows the calendar week by week.
    */

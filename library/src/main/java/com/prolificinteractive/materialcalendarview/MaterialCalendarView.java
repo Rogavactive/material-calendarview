@@ -27,6 +27,8 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.prolificinteractive.materialcalendarview.format.ArrayWeekDayFormatter;
 import com.prolificinteractive.materialcalendarview.format.DayFormatter;
 import com.prolificinteractive.materialcalendarview.format.MonthArrayTitleFormatter;
@@ -408,6 +410,17 @@ public class MaterialCalendarView extends ViewGroup {
     currentMonth = CalendarDay.today();
     setCurrentDate(currentMonth);
 
+    setOnTitleClickListener(view -> {
+      // This only works for months. not adapted to weeks.
+      if (state.calendarMode == CalendarMode.MONTHS) {
+        switchToState(CalendarMode.YEARS);
+      } else if(state.calendarMode == CalendarMode.YEARS) {
+        switchToState(CalendarMode.DECADES);
+      } else {
+        switchToState(CalendarMode.MONTHS);
+      }
+    });
+
     if (isInEditMode()) {
       removeView(pager);
       MonthView monthView = new MonthView(this, currentMonth, getFirstDayOfWeek(), true);
@@ -417,6 +430,20 @@ public class MaterialCalendarView extends ViewGroup {
       monthView.setShowOtherDates(getShowOtherDates());
       addView(monthView, new LayoutParams(calendarMode.visibleWeeksCount + DAY_NAMES_ROW));
     }
+  }
+
+  private void switchToState(CalendarMode calendarModeState) {
+    Toast.makeText(getContext(), "switching to state: " + calendarModeState, Toast.LENGTH_SHORT).show();
+    newState()
+            .setFirstDayOfWeek(firstDayOfWeek)
+            .setCalendarDisplayMode(calendarModeState)
+            .setShowWeekDays(showWeekDays)
+            .commit();
+    updateUi();
+  }
+
+  protected int getAdapterPosition() {
+    return pager.getCurrentItem();
   }
 
   private void setupChildren() {
@@ -430,7 +457,7 @@ public class MaterialCalendarView extends ViewGroup {
   }
 
   private void updateUi() {
-    titleChanger.change(currentMonth);
+    titleChanger.change(currentMonth, state.calendarMode, state.minDate);
     enableView(buttonPast, canGoBack());
     enableView(buttonFuture, canGoForward());
   }
@@ -1481,6 +1508,18 @@ public class MaterialCalendarView extends ViewGroup {
     onDateClicked(dayView.getDate(), !dayView.isChecked());
   }
 
+  protected void onMonthClicked(final CalendarDay month) { // 1 - 12
+    switchToState(CalendarMode.MONTHS);
+    setCurrentDate(month);
+    Toast.makeText(getContext(), "month clicked : " + month, Toast.LENGTH_SHORT).show();
+  }
+
+  protected void onYearClicked(final CalendarDay month) {
+    switchToState(CalendarMode.YEARS);
+    setCurrentDate(month);
+    Toast.makeText(getContext(), "month clicked : " + month, Toast.LENGTH_SHORT).show();
+  }
+
   /**
    * Call by {@link CalendarPagerView} to indicate that a day was long clicked and we should handle
    * it
@@ -1974,6 +2013,12 @@ public class MaterialCalendarView extends ViewGroup {
         break;
       case WEEKS:
         newAdapter = new WeekPagerAdapter(this);
+        break;
+      case YEARS:
+        newAdapter = new YearPagerAdapter(this);
+        break;
+      case DECADES:
+        newAdapter = new DecadesAdapter(this);
         break;
       default:
         throw new IllegalArgumentException("Provided display mode which is not yet implemented");

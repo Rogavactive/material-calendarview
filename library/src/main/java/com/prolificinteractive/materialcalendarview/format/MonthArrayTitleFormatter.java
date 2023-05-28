@@ -2,6 +2,7 @@ package com.prolificinteractive.materialcalendarview.format;
 
 import android.text.SpannableStringBuilder;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
+import com.prolificinteractive.materialcalendarview.CalendarMode;
 
 /**
  * Use an array to generate a month/year label
@@ -29,7 +30,7 @@ public class MonthArrayTitleFormatter implements TitleFormatter {
    * {@inheritDoc}
    */
   @Override
-  public CharSequence format(CalendarDay day) {
+  public CharSequence format(CalendarDay day, CalendarMode mode, CalendarDay minDate) {
     return new SpannableStringBuilder()
         .append(monthLabels[day.getMonth() - 1])
         .append(" ")

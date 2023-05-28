@@ -28,7 +28,8 @@ class TitleChanger {
   private int orientation = MaterialCalendarView.VERTICAL;
 
   private long lastAnimTime = 0;
-  private CalendarDay previousMonth = null;
+  private CalendarDay previousDate = null;
+  private CalendarMode previousMode = null;
 
   public TitleChanger(TextView title) {
     this.title = title;
@@ -44,27 +45,42 @@ class TitleChanger {
     );
   }
 
-  public void change(final CalendarDay currentMonth) {
+  public void change(final CalendarDay currentDate, CalendarMode mode, CalendarDay minDate) {
     long currentTime = System.currentTimeMillis();
 
-    if (currentMonth == null) {
+    if (currentDate == null) {
       return;
+    }
+
+    if (minDate == null) {
+      CalendarDay today = CalendarDay.today();
+      minDate = CalendarDay.from(today.getYear() - 200, today.getMonth(), today.getDay());
     }
 
     if (TextUtils.isEmpty(title.getText()) || (currentTime - lastAnimTime) < animDelay) {
-      doChange(currentTime, currentMonth, false);
+      doChange(currentTime, currentDate, false, mode, minDate);
     }
 
-    if (currentMonth.equals(previousMonth) ||
-        (currentMonth.getMonth() == previousMonth.getMonth()
-            && currentMonth.getYear() == previousMonth.getYear())) {
+    if (mode == CalendarMode.MONTHS && (currentDate.getMonth() == previousDate.getMonth()
+                    && currentDate.getYear() == previousDate.getYear() && previousMode == mode)) {
       return;
     }
 
-    doChange(currentTime, currentMonth, true);
+    if (mode == CalendarMode.YEARS && (currentDate.getYear() == previousDate.getYear()
+            && previousMode == mode)) {
+      return;
+    }
+
+    if (mode == CalendarMode.DECADES
+            && (currentDate.getYear() - minDate.getYear())/12 == (previousDate.getYear() - minDate.getYear())/12
+            && previousMode == mode) {
+      return;
+    }
+
+    doChange(currentTime, currentDate, true, mode, minDate);
   }
 
-  private void doChange(final long now, final CalendarDay currentMonth, boolean animate) {
+  private void doChange(final long now, final CalendarDay currentDate, boolean animate, CalendarMode mode, CalendarDay minDate) {
 
     title.animate().cancel();
     doTranslation(title, 0);
@@ -72,12 +88,12 @@ class TitleChanger {
     title.setAlpha(1);
     lastAnimTime = now;
 
-    final CharSequence newTitle = titleFormatter.format(currentMonth);
+    final CharSequence newTitle = titleFormatter.format(currentDate, mode, minDate);
 
     if (!animate) {
       title.setText(newTitle);
     } else {
-      final int translation = translate * (previousMonth.isBefore(currentMonth) ? 1 : -1);
+      final int translation = translate * (previousDate.isBefore(currentDate) ? 1 : -1);
       final ViewPropertyAnimator viewPropertyAnimator = title.animate();
 
       if (orientation == MaterialCalendarView.HORIZONTAL) {
@@ -120,7 +136,8 @@ class TitleChanger {
           }).start();
     }
 
-    previousMonth = currentMonth;
+    previousDate = currentDate;
+    previousMode = mode;
   }
 
   private void doTranslation(final TextView title, final int translate) {
@@ -144,6 +161,6 @@ class TitleChanger {
   }
 
   public void setPreviousMonth(CalendarDay previousMonth) {
-    this.previousMonth = previousMonth;
+    this.previousDate = previousMonth;
   }
 }

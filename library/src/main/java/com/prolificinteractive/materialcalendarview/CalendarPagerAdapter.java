@@ -77,7 +77,7 @@ abstract class CalendarPagerAdapter<V extends CalendarPagerView> extends PagerAd
 
   @Override
   public CharSequence getPageTitle(int position) {
-    return titleFormatter.format(getItem(position));
+    return titleFormatter.format(getItem(position), CalendarMode.MONTHS, CalendarDay.today());
   }
 
   public CalendarPagerAdapter<?> migrateStateAndReturn(CalendarPagerAdapter<?> newAdapter) {

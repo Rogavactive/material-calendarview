@@ -10,6 +10,8 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView.ShowOtherDates;
 import com.prolificinteractive.materialcalendarview.format.DayFormatter;
 import com.prolificinteractive.materialcalendarview.format.WeekDayFormatter;
+
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -58,7 +60,7 @@ abstract class CalendarPagerView extends ViewGroup
     if (showWeekDays) {
       buildWeekDays(resetAndGetWorkingCalendar());
     }
-    buildDayViews(dayViews, resetAndGetWorkingCalendar());
+    buildDayViews(dayViews, resetAndGetWorkingCalendar(), mcv.getAdapterPosition(), firstViewDay);
   }
 
   private void buildWeekDays(LocalDate calendar) {
@@ -83,6 +85,24 @@ abstract class CalendarPagerView extends ViewGroup
     addView(dayView, new LayoutParams());
   }
 
+  protected void addMonthView(Collection<DayView> dayViews, LocalDate temp) {
+    CalendarDay day = CalendarDay.from(temp);
+    MonthsView monthsView = new MonthsView(getContext(), day);
+    monthsView.setOnClickListener(this);
+    monthsView.setOnLongClickListener(null);
+    dayViews.add(monthsView);
+    addView(monthsView, new LayoutParams());
+  }
+
+  protected void addYearView(Collection<DayView> dayViews, LocalDate temp) {
+    CalendarDay day = CalendarDay.from(temp);
+    YearsView yearsView = new YearsView(getContext(), day);
+    yearsView.setOnClickListener(this);
+    yearsView.setOnLongClickListener(null);
+    dayViews.add(yearsView);
+    addView(yearsView, new LayoutParams());
+  }
+
   protected LocalDate resetAndGetWorkingCalendar() {
     final TemporalField firstDayOfWeek = WeekFields.of(this.firstDayOfWeek, 1).dayOfWeek();
     final LocalDate temp = getFirstViewDay().getDate().with(firstDayOfWeek, 1);
@@ -100,7 +120,7 @@ abstract class CalendarPagerView extends ViewGroup
     return firstDayOfWeek;
   }
 
-  protected abstract void buildDayViews(Collection<DayView> dayViews, LocalDate calendar);
+  protected abstract void buildDayViews(Collection<DayView> dayViews, LocalDate calendar, int position, CalendarDay firstViewDay);
 
   protected abstract boolean isDayEnabled(CalendarDay day);
 
@@ -201,7 +221,13 @@ abstract class CalendarPagerView extends ViewGroup
 
   @Override
   public void onClick(final View v) {
-    if (v instanceof DayView) {
+    if (v instanceof YearsView) {
+      final YearsView yearsView = (YearsView) v;
+      mcv.onYearClicked(yearsView.getDate());
+    } else if (v instanceof MonthsView) {
+      final MonthsView monthsView = (MonthsView) v;
+      mcv.onMonthClicked(monthsView.getDate());
+    } else if (v instanceof DayView) {
       final DayView dayView = (DayView) v;
       mcv.onDateClicked(dayView);
     }
@@ -245,7 +271,7 @@ abstract class CalendarPagerView extends ViewGroup
     }
 
     //The spec width should be a correct multiple
-    final int measureTileWidth = specWidthSize / DEFAULT_DAYS_IN_WEEK;
+    final int measureTileWidth = specWidthSize / getColumns();
     final int measureTileHeight = specHeightSize / getRows();
 
     //Just use the spec sizes
@@ -274,6 +300,10 @@ abstract class CalendarPagerView extends ViewGroup
    * Return the number of rows to display per page
    */
   protected abstract int getRows();
+
+  protected int getColumns() {
+    return DEFAULT_DAYS_IN_WEEK;
+  }
 
   /**
    * {@inheritDoc}
@@ -304,7 +334,7 @@ abstract class CalendarPagerView extends ViewGroup
       }
 
       //We should warp every so many children
-      if (i % DEFAULT_DAYS_IN_WEEK == (DEFAULT_DAYS_IN_WEEK - 1)) {
+      if (i % getColumns() == (getColumns() - 1)) {
         childLeft = parentLeft;
         childRight = parentRight;
         childTop += height;

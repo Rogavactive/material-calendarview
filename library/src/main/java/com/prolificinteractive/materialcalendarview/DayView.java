@@ -32,15 +32,15 @@ import static com.prolificinteractive.materialcalendarview.MaterialCalendarView.
  */
 @SuppressLint("ViewConstructor") class DayView extends AppCompatCheckedTextView {
 
-  private CalendarDay date;
+  protected CalendarDay date;
   private int selectionColor = Color.GRAY;
 
   private final int fadeTime;
   private Drawable customBackground = null;
   private Drawable selectionDrawable;
   private Drawable mCircleDrawable;
-  private DayFormatter formatter = DayFormatter.DEFAULT;
-  private DayFormatter contentDescriptionFormatter = formatter;
+  protected DayFormatter formatter = DayFormatter.DEFAULT;
+  protected DayFormatter contentDescriptionFormatter = formatter;
 
   private boolean isInRange = true;
   private boolean isInMonth = true;
